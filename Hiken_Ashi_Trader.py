@@ -16,14 +16,20 @@ import pandas as pd
 from pprint import pprint, pformat
 
 
-logging.basicConfig(level=logging.DEBUG)
-
 def get_arguments() :
     parser = argparse.ArgumentParser()
     parser.add_argument('--ticker', dest='ticker', default='AAPL',
                         help='Target ticker to trace.')
+    parser.add_argument('-v', '--verbose', dest='verbose', action='count',
+                        help='Make the operation more talkative')
     args = parser.parse_args()
     args.ticker = args.ticker.upper()
+
+    if args.verbose :
+        logging.basicConfig(level=logging.DEBUG)
+    else :
+        logging.basicConfig(level=logging.INFO)
+
     logging.debug(f"Ticker = {args.ticker}")
     return args
 
@@ -68,7 +74,6 @@ def add_hiken_ashi_data(chart_json) :
 if __name__ == "__main__" :
 
     # TODO : argparse for saving data from IEX & saved data path
-    # TODO : argparse for verbose logging
 
     args = get_arguments()
     ticker = args.ticker
