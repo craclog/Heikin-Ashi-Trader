@@ -9,16 +9,23 @@ config.yml
 import requests
 import json, yaml
 import datetime
-import plotly
 import logging
-import pandas as pd
-import plotly.graph_objects as go
 import argparse
+import plotly.graph_objects as go
+import pandas as pd
 from pprint import pprint, pformat
 
 
 logging.basicConfig(level=logging.DEBUG)
-ticker = "ABNB"
+
+def get_arguments() :
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--ticker', dest='ticker', default='AAPL',
+                        help='Target ticker to trace.')
+    args = parser.parse_args()
+    args.ticker = args.ticker.upper()
+    logging.debug(f"Ticker = {args.ticker}")
+    return args
 
 
 # Read config.yml for IEX API token
@@ -62,7 +69,9 @@ if __name__ == "__main__" :
 
     # TODO : argparse for saving data from IEX & saved data path
     # TODO : argparse for verbose logging
-    # TODO : argparse for ticker
+
+    args = get_arguments()
+    ticker = args.ticker
 
     secret_token, publishable_token = read_config("config.yml")
 
@@ -80,11 +89,12 @@ if __name__ == "__main__" :
     logging.debug(df)
 
     # Create Hiken-Ashi chart
-    fig = go.Figure(data=[go.Candlestick(x=df['date'],
-                    open=df['haOpen'],
-                    high=df['haHigh'],
-                    low=df['haLow'],
-                    close=df['haClose'])])
+    fig = go.Figure(data=[go.Candlestick(
+                        x=df['date'],
+                        open=df['haOpen'],
+                        high=df['haHigh'],
+                        low=df['haLow'],
+                        close=df['haClose'])])
     fig.show()
 
     # TODO : Mail to user when the time to sell/buy comes.
