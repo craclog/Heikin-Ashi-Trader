@@ -89,11 +89,12 @@ if __name__ == "__main__" :
 
     data_json = add_hiken_ashi_data(data_json)
     df = pd.DataFrame(data_json)
+    df.set_index("date", inplace=True)
     logging.debug(df)
 
     # Create Hiken-Ashi chart
     fig = go.Figure(data=[go.Candlestick(
-                        x=df['date'],
+                        x=df.index,
                         open=df['haOpen'],
                         high=df['haHigh'],
                         low=df['haLow'],
