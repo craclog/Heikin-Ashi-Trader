@@ -68,6 +68,21 @@ def add_hiken_ashi_data(chart_json) :
     logging.debug(pformat(chart_json))
     return chart_json
 
+def is_time_to_buy(day) :
+    block_len = day.haClose - day.haOpen
+    upper_tail_len = day.haHigh - day.haClose
+    # When power of buying trend is strong, it's time to buy.
+    if day.haLow == day.haOpen and block_len / 2 <= upper_tail_len:
+        return True
+    else :
+        return False
+
+def is_time_to_sell(day) :
+    # When selling trend is getting start, it's time to sell.
+    if day.haHigh == day.haClose :
+        return True
+    else :
+        return False
 
 if __name__ == "__main__" :
 
@@ -103,3 +118,10 @@ if __name__ == "__main__" :
     postman = Postman(sender_email=cfg["SENDER_EMAIL"],
                         sender_pwd=cfg["SENDER_PWD"],
                         receiver_email=cfg["RECEIVER_EMAIL"])
+    fig.show()
+
+    if is_time_to_buy(df.iloc[-1]) :
+        postman.send(f"BUY {ticker}", "")
+
+    elif is_time_to_sell(df.iloc[-1]) :
+        postman.send(f"SELL {ticker}", "")
