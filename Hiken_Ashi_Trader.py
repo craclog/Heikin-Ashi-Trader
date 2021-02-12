@@ -27,9 +27,9 @@ def get_arguments() :
     args.ticker = args.ticker.upper()
 
     if args.verbose :
-        logging.basicConfig(level=logging.DEBUG)
+        logging.basicConfig(level=logging.DEBUG, format='%(message)s')
     else :
-        logging.basicConfig(level=logging.INFO)
+        logging.basicConfig(level=logging.INFO, format='%(message)s')
 
     logging.debug(f"Ticker = {args.ticker}")
     return args
