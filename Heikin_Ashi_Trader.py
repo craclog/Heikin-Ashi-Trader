@@ -1,7 +1,7 @@
 """
-Hiken-Ashi Trader
+Heikin-Ashi Trader
 
-Hiken-Ashi Trader gets stock data using IEX API, so you need to get
+Heikin-Ashi Trader gets stock data using IEX API, so you need to get
 API token from https://iexcloud.io/, and you should put them in
 config.yml
 """
@@ -20,7 +20,7 @@ from pprint import pprint, pformat
 def get_arguments() :
     parser = argparse.ArgumentParser()
     parser.add_argument('--sandbox', dest='sandbox_mode', action='count',
-                        help='Run Hiken-Ashi-Trader in sandbox mode')
+                        help='Run Heikin-Ashi-Trader in sandbox mode')
     parser.add_argument('--ticker', dest='ticker', default='AAPL',
                         help='Target ticker to trace.')
     parser.add_argument('-a', '--add-trace', dest='add_trace',
@@ -46,11 +46,11 @@ def read_config(config_file) :
         config = yaml.load(f)
     return config
 
-# Add Hiken-Ashi data column
-def add_hiken_ashi_data(chart_json) :
+# Add Heikin-Ashi data column
+def add_heikin_ashi_data(chart_json) :
     for i in range(len(chart_json)) :
 
-        # First Hiken-Ashi data is same as normal candle data.
+        # First Heikin-Ashi data is same as normal candle data.
         if i == 0 :
             chart_json[i]['haOpen']  = chart_json[i]['fOpen']
             chart_json[i]['haClose'] = chart_json[i]['fClose']
@@ -115,8 +115,8 @@ def get_chart_using_IEX_api(sandbox_mode, chart_range, ticker) :
         logging.error(f"Request Failed. {url}")
         exit(1)
 
-    # Add Hiken-Ashi informations in data_json
-    data_json = add_hiken_ashi_data(data_json)
+    # Add Heikin-Ashi informations in data_json
+    data_json = add_heikin_ashi_data(data_json)
     df = pd.DataFrame(data_json)
     df.set_index("date", inplace=True)
     logging.debug(df)
@@ -147,7 +147,7 @@ if __name__ == "__main__" :
     for ticker in cfg["trace"] :
         df = get_chart_using_IEX_api(args.sandbox_mode, args.chart_range, ticker)
 
-    # Create Hiken-Ashi chart
+    # Create Heikin-Ashi chart
     fig = go.Figure(data=[go.Candlestick(
                         x=df.index,
                         open=df['haOpen'],
