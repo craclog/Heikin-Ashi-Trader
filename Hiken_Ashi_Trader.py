@@ -21,6 +21,8 @@ def get_arguments() :
     parser = argparse.ArgumentParser()
     parser.add_argument('--ticker', dest='ticker', default='AAPL',
                         help='Target ticker to trace.')
+    parser.add_argument('-a', '--add-trace', dest='add_trace',
+                        help='Add stock ticket to trace')
     parser.add_argument('-v', '--verbose', dest='verbose', action='count',
                         help='Make the operation more talkative')
     args = parser.parse_args()
@@ -84,15 +86,14 @@ def is_time_to_sell(day) :
     else :
         return False
 
-if __name__ == "__main__" :
+def add_new_stock_to_trace_list(cfg, new_stock) :
+    if args.add_trace :
+        new_stock = new_stock.upper()
+        if new_stock not in cfg["trace"] :
+            cfg["trace"].append(new_stock)
+    return cfg
 
-    # TODO : argparse for saving data from IEX & saved data path
-
-    args = get_arguments()
-    ticker = args.ticker
-
-    cfg = read_config("config.yml")
-
+def get_chart_using_IEX_api(ticker) :
     # Get chart data using IEX REST API
     try :
         url = f'https://sandbox.iexapis.com/stable/stock/{ticker}/chart/1m?token={cfg["PUBLISHABLE_TOKEN"]}'
@@ -102,10 +103,37 @@ if __name__ == "__main__" :
         logging.error(f"Request Failed. {url}")
         exit(1)
 
+    # Add Hiken-Ashi informations in data_json
     data_json = add_hiken_ashi_data(data_json)
     df = pd.DataFrame(data_json)
     df.set_index("date", inplace=True)
     logging.debug(df)
+
+    # Check whether it is time to buy/sell or not
+    if is_time_to_buy(df.iloc[-1]) :
+        postman.send(f"BUY {ticker}", "")
+
+    elif is_time_to_sell(df.iloc[-1]) :
+        postman.send(f"SELL {ticker}", "")
+
+    return df
+
+
+if __name__ == "__main__" :
+
+    # TODO : argparse for saving data from IEX & saved data path
+
+    args = get_arguments()
+    ticker = args.ticker
+
+    cfg = read_config("config.yml")
+    cfg = add_new_stock_to_trace_list(cfg, args.add_trace)
+
+    with open('config.yml', 'w') as f:
+        yaml.dump(cfg, f)
+
+    for ticker in cfg["trace"] :
+        df = get_chart_using_IEX_api(ticker)
 
     # Create Hiken-Ashi chart
     fig = go.Figure(data=[go.Candlestick(
@@ -118,10 +146,3 @@ if __name__ == "__main__" :
     postman = Postman(sender_email=cfg["SENDER_EMAIL"],
                         sender_pwd=cfg["SENDER_PWD"],
                         receiver_email=cfg["RECEIVER_EMAIL"])
-    fig.show()
-
-    if is_time_to_buy(df.iloc[-1]) :
-        postman.send(f"BUY {ticker}", "")
-
-    elif is_time_to_sell(df.iloc[-1]) :
-        postman.send(f"SELL {ticker}", "")
