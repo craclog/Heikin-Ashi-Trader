@@ -19,10 +19,14 @@ from pprint import pprint, pformat
 
 def get_arguments() :
     parser = argparse.ArgumentParser()
+    parser.add_argument('--sandbox', dest='sandbox_mode', action='count',
+                        help='Run Hiken-Ashi-Trader in sandbox mode')
     parser.add_argument('--ticker', dest='ticker', default='AAPL',
                         help='Target ticker to trace.')
     parser.add_argument('-a', '--add-trace', dest='add_trace',
                         help='Add stock ticket to trace')
+    parser.add_argument('-r', '--chart-range', dest='chart_range', default='5d',
+                        help='How long you query for tickers (5d, 10d, 1m, ...)')
     parser.add_argument('-v', '--verbose', dest='verbose', action='count',
                         help='Make the operation more talkative')
     args = parser.parse_args()
@@ -93,10 +97,18 @@ def add_new_stock_to_trace_list(cfg, new_stock) :
             cfg["trace"].append(new_stock)
     return cfg
 
-def get_chart_using_IEX_api(ticker) :
+def get_chart_using_IEX_api(sandbox_mode, chart_range, ticker) :
+
+    if sandbox_mode :
+        running_mode = "sandbox"
+        token = cfg["SANDBOX_PUBLISHABLE_TOKEN"]
+    else :
+        running_mode = "cloud"
+        token = cfg["PUBLISHABLE_TOKEN"]
+
     # Get chart data using IEX REST API
     try :
-        url = f'https://sandbox.iexapis.com/stable/stock/{ticker}/chart/1m?token={cfg["PUBLISHABLE_TOKEN"]}'
+        url = f'https://{running_mode}.iexapis.com/stable/stock/{ticker}/chart/{chart_range}?token={token}'
         req_chart = requests.get(url)
         data_json = req_chart.json()
     except :
@@ -133,7 +145,7 @@ if __name__ == "__main__" :
         yaml.dump(cfg, f)
 
     for ticker in cfg["trace"] :
-        df = get_chart_using_IEX_api(ticker)
+        df = get_chart_using_IEX_api(args.sandbox_mode, args.chart_range, ticker)
 
     # Create Hiken-Ashi chart
     fig = go.Figure(data=[go.Candlestick(
