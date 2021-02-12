@@ -13,6 +13,7 @@ import logging
 import argparse
 import plotly.graph_objects as go
 import pandas as pd
+from postman import Postman
 from pprint import pprint, pformat
 
 
@@ -33,14 +34,11 @@ def get_arguments() :
     logging.debug(f"Ticker = {args.ticker}")
     return args
 
-
 # Read config.yml for IEX API token
 def read_config(config_file) :
     with open(config_file) as f :
         config = yaml.load(f)
-    secret_token        = config['SECRET_TOKEN']
-    publishable_token   = config['PUBLISHABLE_TOKEN']
-    return secret_token, publishable_token
+    return config
 
 # Add Hiken-Ashi data column
 def add_hiken_ashi_data(chart_json) :
@@ -54,8 +52,8 @@ def add_hiken_ashi_data(chart_json) :
             chart_json[i]['haLow']   = chart_json[i]['fLow']
 
         else :
-            last_ha_open = chart_json[i-1]['haOpen']
-            last_ha_close = chart_json[i-1]['haClose']
+            last_ha_open    = chart_json[i-1]['haOpen']
+            last_ha_close   = chart_json[i-1]['haClose']
 
             cur_open    = chart_json[i]['fOpen']
             cur_close   = chart_json[i]['fClose']
@@ -78,11 +76,11 @@ if __name__ == "__main__" :
     args = get_arguments()
     ticker = args.ticker
 
-    secret_token, publishable_token = read_config("config.yml")
+    cfg = read_config("config.yml")
 
     # Get chart data using IEX REST API
     try :
-        url = f'https://sandbox.iexapis.com/stable/stock/{ticker}/chart/1m?token={publishable_token}'
+        url = f'https://sandbox.iexapis.com/stable/stock/{ticker}/chart/1m?token={cfg["PUBLISHABLE_TOKEN"]}'
         req_chart = requests.get(url)
         data_json = req_chart.json()
     except :
@@ -100,6 +98,7 @@ if __name__ == "__main__" :
                         high=df['haHigh'],
                         low=df['haLow'],
                         close=df['haClose'])])
-    fig.show()
 
-    # TODO : Mail to user when the time to sell/buy comes.
+    postman = Postman(sender_email=cfg["SENDER_EMAIL"],
+                        sender_pwd=cfg["SENDER_PWD"],
+                        receiver_email=cfg["RECEIVER_EMAIL"])
